@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>欧利蒂斯庄园 - 求生任务手册</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+<div class="container">
+
+  <!-- ════════════ ASCII 艺术大门 ════════════ -->
+  <pre class="ascii-art" id="asciiArt">{{ title_art }}</pre>
+
+  <!-- ════════════ 标题横幅 ════════════ -->
+  <header class="header-banner">
+    <div class="banner-frame">
+      <div class="banner-decor">◆ ◇ ◆</div>
+      <h1 class="banner-title">欧 利 蒂 斯 庄 园</h1>
+      <p class="banner-subtitle">求 生 任 务 手 册</p>
+      <div class="banner-decor">◆ ◇ ◆</div>
+    </div>
+    <blockquote class="quote-box" id="quoteBox">
+      「{{ stats.quote }}」
+    </blockquote>
+  </header>
+
+  <!-- ════════════ 统计面板 ════════════ -->
+  <section class="stats-panel" id="statsPanel">
+    <h2 class="section-title">📊 庄园情报</h2>
+    <div class="stats-grid">
+      <div class="stat-item">
+        <span class="stat-number" id="statTotal">{{ stats.total }}</span>
+        <span class="stat-label">📬 信件总数</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-number" id="statDone">{{ stats.done }}</span>
+        <span class="stat-label">✓ 已完成</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-number" id="statPending">{{ stats.pending }}</span>
+        <span class="stat-label">○ 待处理</span>
+      </div>
+      <div class="stat-item urgent">
+        <span class="stat-number" id="statHighPri">{{ stats.high_pri }}</span>
+        <span class="stat-label">⚠ 紧急信件</span>
+      </div>
+    </div>
+    <div class="progress-section">
+      <span class="progress-label">密码机破译进度</span>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressFill" style="width: {{ stats.pct }}%"></div>
+      </div>
+      <span class="progress-text" id="progressText">{{ stats.pct|round|int }}% ({{ stats.done }}/{{ stats.total }})</span>
+    </div>
+    <p class="stats-hint" id="statsHint"></p>
+  </section>
+
+  <!-- ════════════ 添加任务 ════════════ -->
+  <section class="add-task-section">
+    <h2 class="section-title">✉ 接收新信件</h2>
+    <form id="addTaskForm" class="add-task-form">
+      <div class="form-row">
+        <input
+          type="text"
+          id="taskContent"
+          class="task-input"
+          placeholder="输入任务内容……"
+          maxlength="200"
+          autocomplete="off"
+          required
+        >
+        <select id="taskPriority" class="priority-select">
+          <option value="1">✦ 求生者级</option>
+          <option value="2" selected>✦✦ 监管者级</option>
+          <option value="3">✦✦✦ 梦之女巫级</option>
+        </select>
+        <button type="submit" class="btn btn-add" id="addBtn">
+          ⚙ 归档信件
+        </button>
+      </div>
+      <p class="form-error" id="addError"></p>
+    </form>
+    <div class="cipher-toast" id="cipherToast" style="display:none;">
+      <span class="cipher-icon">⚙</span>
+      <span id="cipherMsg"></span>
+    </div>
+  </section>
+
+  <!-- ════════════ 任务列表 ════════════ -->
+  <section class="task-list-section">
+    <h2 class="section-title">📜 庄园信件一览</h2>
+
+    {% if tasks %}
+    <div class="task-list" id="taskList">
+      {% for task in tasks %}
+      <div class="task-row {% if task.is_completed %}completed{% endif %}"
+           data-id="{{ task.id }}"
+           id="taskRow{{ task.id }}">
+        <button class="toggle-btn" data-id="{{ task.id }}" title="切换完成状态">
+          <span class="toggle-mark">{{ '✓' if task.is_completed else '○' }}</span>
+        </button>
+        <span class="task-id">#{{ task.id }}</span>
+        <span class="priority-badge priority-{{ task.priority }}">{{ task.priority_label }}</span>
+        <span class="task-content">{{ task.content }}</span>
+        <div class="task-actions">
+          <button class="btn-icon edit-btn" data-id="{{ task.id }}" title="编辑任务">✎</button>
+          <button class="btn-icon delete-btn" data-id="{{ task.id }}" title="删除任务">⛏</button>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state" id="emptyState">
+      <p>⚠ 当前没有信件。庄园静悄悄的……</p>
+    </div>
+    <div class="task-list" id="taskList" style="display:none;"></div>
+    {% endif %}
+  </section>
+
+  <!-- ════════════ 角色图鉴 ════════════ -->
+  <section class="character-gallery">
+    <h2 class="section-title toggle-gallery" id="galleryToggle">
+      🎭 庄园角色图鉴 <span class="toggle-arrow">▼</span>
+    </h2>
+    <div class="gallery-content" id="galleryContent">
+      <div class="gallery-column">
+        <h3 class="gallery-subtitle survivor-title">🏃 求生者</h3>
+        <div class="character-grid">
+          {% for name in survivors %}
+          <div class="character-card survivor-card" data-name="{{ name }}" data-icon="{{ survivor_icons[name] }}" data-role="{{ character_roles[name] }}" data-side="survivor" data-img="{{ character_images[name] }}">
+            <span class="character-icon-wrap">
+              <img class="char-img" src="/static/{{ character_images[name] }}" alt="{{ name }}" loading="lazy"
+                   onerror="this.style.display='none';this.nextElementSibling.style.display='block';">
+              <span class="icon-fallback" style="display:none;">{{ survivor_icons[name] }}</span>
+            </span>
+            <span class="character-name">{{ name }}</span>
+            <span class="character-role">{{ character_roles[name] }}</span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="gallery-column">
+        <h3 class="gallery-subtitle hunter-title">👁 监管者</h3>
+        <div class="character-grid">
+          {% for name in hunters %}
+          <div class="character-card hunter-card" data-name="{{ name }}" data-icon="{{ hunter_icons[name] }}" data-role="{{ character_roles[name] }}" data-side="hunter" data-img="{{ character_images[name] }}">
+            <span class="character-icon-wrap">
+              <img class="char-img" src="/static/{{ character_images[name] }}" alt="{{ name }}" loading="lazy"
+                   onerror="this.style.display='none';this.nextElementSibling.style.display='block';">
+              <span class="icon-fallback" style="display:none;">{{ hunter_icons[name] }}</span>
+            </span>
+            <span class="character-name">{{ name }}</span>
+            <span class="character-role">{{ character_roles[name] }}</span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════ 页脚 ════════════ -->
+  <footer class="app-footer">
+    <p>第五人格 · 欧利蒂斯庄园 · 求生任务手册</p>
+  </footer>
+
+</div>
+
+<!-- 编辑弹窗 -->
+<div class="modal-overlay" id="editModal" style="display:none;">
+  <div class="modal-box">
+    <h3>✎ 修改密文</h3>
+    <input type="hidden" id="editTaskId">
+    <div class="form-group">
+      <label for="editContent">任务内容</label>
+      <input type="text" id="editContent" class="task-input" maxlength="200">
+    </div>
+    <div class="form-group">
+      <label for="editPriority">优先级</label>
+      <select id="editPriority" class="priority-select">
+        <option value="1">✦ 求生者级</option>
+        <option value="2">✦✦ 监管者级</option>
+        <option value="3">✦✦✦ 梦之女巫级</option>
+      </select>
+    </div>
+    <p class="form-error" id="editError"></p>
+    <div class="modal-actions">
+      <button class="btn btn-add" id="saveEditBtn">✓ 保存</button>
+      <button class="btn btn-cancel" id="cancelEditBtn">取消</button>
+    </div>
+  </div>
+</div>
+
+<!-- 删除确认弹窗 -->
+<div class="modal-overlay" id="deleteModal" style="display:none;">
+  <div class="modal-box modal-sm">
+    <h3>⛏ 拆除陷阱</h3>
+    <p>确认删除这个任务吗？此操作不可撤销。</p>
+    <input type="hidden" id="deleteTaskId">
+    <div class="modal-actions">
+      <button class="btn btn-danger" id="confirmDeleteBtn">确认拆除</button>
+      <button class="btn btn-cancel" id="cancelDeleteBtn">取消</button>
+    </div>
+  </div>
+</div>
+
+<!-- 角色立绘弹窗 -->
+<div class="modal-overlay" id="portraitModal" style="display:none;">
+  <div class="portrait-box" id="portraitBox">
+    <button class="portrait-close" id="portraitClose">✕</button>
+    <div class="portrait-frame">
+      <div class="portrait-glow"></div>
+      <div class="portrait-icon-large" id="portraitIconWrap">
+        <img id="portraitImg" src="" alt="" style="display:none;"
+             onerror="this.style.display='none';document.getElementById('portraitFallback').style.display='block';">
+        <span class="portrait-fallback" id="portraitFallback"></span>
+      </div>
+      <h2 class="portrait-name" id="portraitName"></h2>
+      <span class="portrait-side" id="portraitSide"></span>
+      <p class="portrait-role" id="portraitRole"></p>
+    </div>
+    <div class="portrait-ornament">◆ ◇ ◆</div>
+  </div>
+</div>
+
+<!-- 注入服务端数据供 JS 使用 -->
+<script>
+  const SURVIVORS = {{ survivors | tojson }};
+  const HUNTERS = {{ hunters | tojson }};
+  const SURVIVOR_ICONS = {{ survivor_icons | tojson }};
+  const HUNTER_ICONS = {{ hunter_icons | tojson }};
+</script>
+<script src="/static/js/app.js"></script>
+</body>
+</html>
