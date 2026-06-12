@@ -76,7 +76,8 @@ class Task:
 class TodoManager:
     """任务管家 — 庄园管家"""
 
-    def __init__(self):
+    def __init__(self, data_file: str = None):
+        self._data_file = data_file or DATA_FILE
         self.tasks: list[Task] = []
         self.counter = 1
         self.load()
@@ -145,6 +146,15 @@ class TodoManager:
                 return True
         return False
 
+    def reorder_tasks(self, ordered_ids: list[int]) -> bool:
+        """按给定的 ID 列表重新排列任务顺序（用于拖拽排序持久化）"""
+        id_to_task = {t.id: t for t in self.tasks}
+        if set(ordered_ids) != set(id_to_task.keys()):
+            return False  # ID 不匹配，拒绝
+        self.tasks = [id_to_task[tid] for tid in ordered_ids]
+        self.save()
+        return True
+
     def get_all_tasks(self) -> list[Task]:
         return self.tasks
 
@@ -160,16 +170,16 @@ class TodoManager:
             "tasks": [t.to_dict() for t in self.tasks],
         }
         try:
-            with open(DATA_FILE, "w", encoding="utf-8") as f:
+            with open(self._data_file, "w", encoding="utf-8") as f:
                 json.dump(data, f, ensure_ascii=False, indent=2)
         except OSError:
             pass
 
     def load(self):
-        if not os.path.exists(DATA_FILE):
+        if not os.path.exists(self._data_file):
             return
         try:
-            with open(DATA_FILE, "r", encoding="utf-8") as f:
+            with open(self._data_file, "r", encoding="utf-8") as f:
                 data = json.load(f)
             self.counter = data.get("counter", 1)
             self.tasks = [Task.from_dict(d) for d in data.get("tasks", [])]

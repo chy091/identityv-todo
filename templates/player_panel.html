@@ -1,0 +1,146 @@
+<!-- ═══════════════════════════════════════════
+     玩家面板模板 — 被 index.html include 复用
+     变量：tasks, stats, player, title
+     ═══════════════════════════════════════════ -->
+<div class="player-panel" data-player="{{ player }}">
+
+  <!-- 面板标题 -->
+  <div class="panel-title-bar">
+    <h2 class="panel-title">🏃 {{ title }}</h2>
+    <span class="panel-badge">玩家 {{ player }}</span>
+  </div>
+
+  <!-- ══════ 统计面板 ══════ -->
+  <div class="stats-panel">
+    <h3 class="section-title">📊 庄园情报</h3>
+    <div class="stats-grid">
+      <div class="stat-item">
+        <span class="stat-number js-stat-total">{{ stats.total }}</span>
+        <span class="stat-label">📬 信件总数</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-number js-stat-done">{{ stats.done }}</span>
+        <span class="stat-label">✓ 已完成</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-number js-stat-pending">{{ stats.pending }}</span>
+        <span class="stat-label">○ 待处理</span>
+      </div>
+      <div class="stat-item urgent">
+        <span class="stat-number js-stat-high-pri">{{ stats.high_pri }}</span>
+        <span class="stat-label">⚠ 紧急信件</span>
+      </div>
+    </div>
+    <div class="progress-section">
+      <span class="progress-label">密码机破译进度</span>
+      <div class="progress-bar">
+        <div class="progress-fill js-progress-fill" style="width: {{ stats.pct }}%"></div>
+      </div>
+      <span class="progress-text js-progress-text">{{ stats.pct|round|int }}% ({{ stats.done }}/{{ stats.total }})</span>
+    </div>
+    <p class="stats-hint js-stats-hint"></p>
+  </div>
+
+  <!-- ══════ 添加任务 ══════ -->
+  <div class="add-task-section">
+    <h3 class="section-title">✉ 接收新信件</h3>
+    <form class="add-task-form js-add-form">
+      <div class="form-row">
+        <input
+          type="text"
+          class="task-input js-task-input"
+          placeholder="输入任务内容……"
+          maxlength="200"
+          autocomplete="off"
+          required
+        >
+        <select class="priority-select js-priority-select">
+          <option value="1">✦ 求生者级</option>
+          <option value="2" selected>✦✦ 监管者级</option>
+          <option value="3">✦✦✦ 梦之女巫级</option>
+        </select>
+        <button type="submit" class="btn btn-add js-add-btn">
+          ⚙ 归档信件
+        </button>
+      </div>
+      <p class="form-error js-add-error"></p>
+    </form>
+    <div class="cipher-toast js-cipher-toast" style="display:none;">
+      <span class="cipher-icon js-cipher-icon">⚙</span>
+      <span class="js-cipher-msg"></span>
+    </div>
+  </div>
+
+  <!-- ══════ 任务列表 ══════ -->
+  <div class="task-list-section">
+    <h3 class="section-title">📜 庄园信件一览</h3>
+
+    {% if tasks %}
+    <div class="task-list js-task-list">
+      {% for task in tasks %}
+      <div class="task-row {% if task.is_completed %}completed{% endif %}"
+           data-id="{{ task.id }}" draggable="true">
+        <span class="drag-handle" title="拖拽排序">⋮⋮</span>
+        <button class="toggle-btn js-toggle-btn" data-id="{{ task.id }}" title="切换完成状态">
+          <span class="toggle-mark">{{ '✓' if task.is_completed else '○' }}</span>
+        </button>
+        <span class="task-id">#{{ task.id }}</span>
+        <span class="priority-badge priority-{{ task.priority }}">{{ task.priority_label }}</span>
+        <span class="task-content">{{ task.content }}</span>
+        <div class="task-actions">
+          <button class="btn-icon edit-btn js-edit-btn" data-id="{{ task.id }}" title="编辑任务">✎</button>
+          <button class="btn-icon delete-btn js-delete-btn" data-id="{{ task.id }}" title="删除任务">⛏</button>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    <div class="empty-state js-empty-state" style="display:none;">
+      <p>⚠ 当前没有信件。庄园静悄悄的……</p>
+    </div>
+    {% else %}
+    <div class="empty-state js-empty-state">
+      <p>⚠ 当前没有信件。庄园静悄悄的……</p>
+    </div>
+    <div class="task-list js-task-list" style="display:none;"></div>
+    {% endif %}
+  </div>
+
+  <!-- ══════ 编辑弹窗（面板内） ══════ -->
+  <div class="modal-overlay js-edit-modal" style="display:none;">
+    <div class="modal-box">
+      <h3>✎ 修改密文</h3>
+      <input type="hidden" class="js-edit-task-id">
+      <div class="form-group">
+        <label>任务内容</label>
+        <input type="text" class="task-input js-edit-content" maxlength="200">
+      </div>
+      <div class="form-group">
+        <label>优先级</label>
+        <select class="priority-select js-edit-priority">
+          <option value="1">✦ 求生者级</option>
+          <option value="2">✦✦ 监管者级</option>
+          <option value="3">✦✦✦ 梦之女巫级</option>
+        </select>
+      </div>
+      <p class="form-error js-edit-error"></p>
+      <div class="modal-actions">
+        <button class="btn btn-add js-save-edit-btn">✓ 保存</button>
+        <button class="btn btn-cancel js-cancel-edit-btn">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════ 删除确认弹窗（面板内） ══════ -->
+  <div class="modal-overlay js-delete-modal" style="display:none;">
+    <div class="modal-box modal-sm">
+      <h3>⛏ 拆除陷阱</h3>
+      <p>确认删除这个任务吗？此操作不可撤销。</p>
+      <input type="hidden" class="js-delete-task-id">
+      <div class="modal-actions">
+        <button class="btn btn-danger js-confirm-delete-btn">确认拆除</button>
+        <button class="btn btn-cancel js-cancel-delete-btn">取消</button>
+      </div>
+    </div>
+  </div>
+
+</div>

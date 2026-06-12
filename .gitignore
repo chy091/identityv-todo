@@ -6,3 +6,6 @@ venv/
 .venv/
 *.code-workspace
 .claude/
+todos.json
+playerA_todos.json
+playerB_todos.json

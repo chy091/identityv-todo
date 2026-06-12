@@ -1,5 +1,5 @@
 """
-第五人格主题 Todo Web 应用
+第五人格主题 Todo Web 应用 — 双人独立版
 欧利蒂斯庄园 - 求生任务手册
 """
 
@@ -17,9 +17,16 @@ app.config["DEBUG"] = not is_production  # debug=False in production
 
 # 数据文件路径（支持 Render 持久磁盘）
 DATA_DIR = os.environ.get("DATA_DIR", ".")
-todo.DATA_FILE = os.path.join(DATA_DIR, "todos.json")
 
-manager = todo.TodoManager()
+# ── 双人独立数据源 ─────────────────────────────────────────
+manager_a = todo.TodoManager(data_file=os.path.join(DATA_DIR, "playerA_todos.json"))
+manager_b = todo.TodoManager(data_file=os.path.join(DATA_DIR, "playerB_todos.json"))
+
+
+def _get_manager(player: str = "A") -> todo.TodoManager:
+    """根据 player 参数返回对应的 TodoManager 实例"""
+    return manager_b if player == "B" else manager_a
+
 
 # ── 角色本地图片路径（放图后自动用，没图则用 emoji）──
 CHARACTER_IMAGES = {
@@ -91,8 +98,8 @@ def _task_to_dict(t: todo.Task) -> dict:
     return d
 
 
-def _get_stats() -> dict:
-    """获取统计信息"""
+def _get_stats(manager: todo.TodoManager) -> dict:
+    """获取指定管理器的统计信息"""
     total, done, pct = manager.get_stats()
     tasks = manager.get_all_tasks()
     pending = total - done
@@ -112,14 +119,21 @@ def _get_stats() -> dict:
 
 @app.route("/")
 def index():
-    """主页"""
-    tasks = manager.get_all_tasks()
-    sorted_tasks = sorted(tasks, key=lambda t: (t.is_completed, -t.priority, t.id))
-    stats = _get_stats()
+    """主页 — 双人面板"""
+    tasks_a = manager_a.get_all_tasks()
+    sorted_a = sorted(tasks_a, key=lambda t: (t.is_completed, -t.priority, t.id))
+    stats_a = _get_stats(manager_a)
+
+    tasks_b = manager_b.get_all_tasks()
+    sorted_b = sorted(tasks_b, key=lambda t: (t.is_completed, -t.priority, t.id))
+    stats_b = _get_stats(manager_b)
+
     return render_template(
         "index.html",
-        tasks=[_task_to_dict(t) for t in sorted_tasks],
-        stats=stats,
+        playerA_tasks=[_task_to_dict(t) for t in sorted_a],
+        playerA_stats=stats_a,
+        playerB_tasks=[_task_to_dict(t) for t in sorted_b],
+        playerB_stats=stats_b,
         survivors=todo.SURVIVORS,
         hunters=todo.HUNTERS,
         survivor_icons=SURVIVOR_ICONS,
@@ -135,14 +149,18 @@ def index():
 @app.route("/api/tasks", methods=["GET"])
 def api_get_tasks():
     """获取所有任务"""
+    player = request.args.get("player", "A")
+    manager = _get_manager(player)
     tasks = manager.get_all_tasks()
-    sorted_tasks = sorted(tasks, key=lambda t: (t.is_completed, -t.priority, t.id))
+    sorted_tasks = sorted(tasks, key=lambda t: (t.is_completed, -t.priority))
     return jsonify([_task_to_dict(t) for t in sorted_tasks])
 
 
 @app.route("/api/tasks", methods=["POST"])
 def api_add_task():
     """添加新任务"""
+    player = request.args.get("player", "A")
+    manager = _get_manager(player)
     data = request.get_json()
     content = data.get("content", "").strip()
     priority = data.get("priority", 1)
@@ -166,6 +184,8 @@ def api_add_task():
 @app.route("/api/tasks/<int:task_id>", methods=["PUT"])
 def api_edit_task(task_id):
     """编辑任务内容和/或优先级"""
+    player = request.args.get("player", "A")
+    manager = _get_manager(player)
     data = request.get_json()
     content = data.get("content", "").strip()
     priority = data.get("priority")
@@ -186,6 +206,8 @@ def api_edit_task(task_id):
 @app.route("/api/tasks/<int:task_id>", methods=["DELETE"])
 def api_delete_task(task_id):
     """删除任务"""
+    player = request.args.get("player", "A")
+    manager = _get_manager(player)
     ok = manager.delete_task(task_id)
     if ok:
         return jsonify({"ok": True})
@@ -195,6 +217,8 @@ def api_delete_task(task_id):
 @app.route("/api/tasks/<int:task_id>/toggle", methods=["POST"])
 def api_toggle_task(task_id):
     """切换任务完成状态"""
+    player = request.args.get("player", "A")
+    manager = _get_manager(player)
     t = next((x for x in manager.get_all_tasks() if x.id == task_id), None)
     if t is None:
         return jsonify({"error": "未找到任务"}), 404
@@ -210,10 +234,27 @@ def api_toggle_task(task_id):
     return jsonify({**_task_to_dict(t), "hunter": hunter, "hunter_icon": hunter_icon})
 
 
+@app.route("/api/tasks/reorder", methods=["POST"])
+def api_reorder_tasks():
+    """拖拽排序后批量更新任务顺序"""
+    player = request.args.get("player", "A")
+    manager = _get_manager(player)
+    data = request.get_json()
+    ordered_ids = data.get("order", [])
+    if not isinstance(ordered_ids, list) or not ordered_ids:
+        return jsonify({"error": "无效的排序数据"}), 400
+    ok = manager.reorder_tasks(ordered_ids)
+    if ok:
+        return jsonify({"ok": True})
+    return jsonify({"error": "排序数据与任务列表不匹配"}), 400
+
+
 @app.route("/api/stats", methods=["GET"])
 def api_stats():
     """获取统计数据"""
-    return jsonify(_get_stats())
+    player = request.args.get("player", "A")
+    manager = _get_manager(player)
+    return jsonify(_get_stats(manager))
 
 
 # ── 启动入口 ──────────────────────────────────────────────
@@ -223,6 +264,6 @@ if __name__ == "__main__":
     if is_production:
         print("  ◆ 生产模式启动 (gunicorn 请直接 import app)")
     else:
-        print("  ◆ Web 版已启动，打开浏览器访问 http://127.0.0.1:5000")
+        print("  ◆ 双人独立版 Web 已启动，打开浏览器访问 http://127.0.0.1:5000")
         print()
         app.run(debug=True, host="127.0.0.1", port=5000)
