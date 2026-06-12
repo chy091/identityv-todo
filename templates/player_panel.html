@@ -10,6 +10,31 @@
     <span class="panel-badge">玩家 {{ player }}</span>
   </div>
 
+  <!-- ══════ 今日角色 ══════ -->
+  <div class="daily-character-section js-daily-section" data-player="{{ player }}">
+    {% if daily %}
+    <div class="daily-card daily-active" data-side="{{ daily.side }}">
+      <span class="daily-label">📅 今日角色</span>
+      <span class="daily-char-icon">
+        <img class="daily-char-img" src="/static/{{ character_images[daily.name] }}"
+             alt="{{ daily.name }}" loading="lazy"
+             onerror="this.style.display='none';this.nextElementSibling.style.display='block';">
+        <span class="daily-icon-fallback" style="display:none;">
+          {{ survivor_icons[daily.name] if daily.side == 'survivor' else hunter_icons[daily.name] }}
+        </span>
+      </span>
+      <span class="daily-char-name">{{ daily.name }}</span>
+      <span class="daily-char-side">{{ '🏃 求生者' if daily.side == 'survivor' else '👁 监管者' }}</span>
+      <span class="daily-char-quote">「{{ character_quotes[daily.name] }}」</span>
+    </div>
+    {% else %}
+    <div class="daily-card daily-empty">
+      <span class="daily-label">📅 今日角色</span>
+      <span class="daily-hint">点击角色图鉴中的头像来选择今日角色</span>
+    </div>
+    {% endif %}
+  </div>
+
   <!-- ══════ 统计面板 ══════ -->
   <div class="stats-panel">
     <h3 class="section-title">📊 庄园情报</h3>

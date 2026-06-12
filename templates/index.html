@@ -33,12 +33,12 @@
   <div class="dual-panel-wrapper">
 
     <!-- ══════ 小木木 面板 ══════ -->
-    {% with tasks=playerA_tasks, stats=playerA_stats, player='A', title='小木木 - 庄园任务' %}
+    {% with tasks=playerA_tasks, stats=playerA_stats, player='A', title='小木木 - 庄园任务', daily=dailyA, character_quotes=character_quotes, character_images=character_images, survivor_icons=survivor_icons, hunter_icons=hunter_icons %}
     {% include "player_panel.html" %}
     {% endwith %}
 
     <!-- ══════ 小E 面板 ══════ -->
-    {% with tasks=playerB_tasks, stats=playerB_stats, player='B', title='小E - 庄园任务' %}
+    {% with tasks=playerB_tasks, stats=playerB_stats, player='B', title='小E - 庄园任务', daily=dailyB, character_quotes=character_quotes, character_images=character_images, survivor_icons=survivor_icons, hunter_icons=hunter_icons %}
     {% include "player_panel.html" %}
     {% endwith %}
 
@@ -106,6 +106,15 @@
       <h2 class="portrait-name" id="portraitName"></h2>
       <span class="portrait-side" id="portraitSide"></span>
       <p class="portrait-role" id="portraitRole"></p>
+      <blockquote class="portrait-quote" id="portraitQuote"></blockquote>
+      <div class="daily-pick-buttons">
+        <button class="btn btn-pick-daily" id="pickDailyA" data-player="A" data-name="" data-side="">
+          🌟 小木木的今日角色
+        </button>
+        <button class="btn btn-pick-daily" id="pickDailyB" data-player="B" data-name="" data-side="">
+          🌟 小E的今日角色
+        </button>
+      </div>
     </div>
     <div class="portrait-ornament">◆ ◇ ◆</div>
   </div>
@@ -117,6 +126,8 @@
   const HUNTERS = {{ hunters | tojson }};
   const SURVIVOR_ICONS = {{ survivor_icons | tojson }};
   const HUNTER_ICONS = {{ hunter_icons | tojson }};
+  const CHARACTER_QUOTES = {{ character_quotes | tojson }};
+  const CHARACTER_IMAGES = {{ character_images | tojson }};
 </script>
 <script src="/static/js/app.js"></script>
 </body>

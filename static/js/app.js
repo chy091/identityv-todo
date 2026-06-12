@@ -654,6 +654,9 @@ class TaskPanel {
   const nameEl = document.getElementById('portraitName');
   const sideEl = document.getElementById('portraitSide');
   const roleEl = document.getElementById('portraitRole');
+  const quoteEl = document.getElementById('portraitQuote');
+  const pickBtnA = document.getElementById('pickDailyA');
+  const pickBtnB = document.getElementById('pickDailyB');
   const closeBtn = document.getElementById('portraitClose');
 
   function close() { modal.style.display = 'none'; }
@@ -684,15 +687,52 @@ class TaskPanel {
 
       nameEl.textContent = name;
       roleEl.textContent = role;
+      quoteEl.textContent = '「' + (CHARACTER_QUOTES[name] || '……') + '」';
 
       box.classList.remove('survivor', 'hunter');
       box.classList.add(side);
 
       sideEl.textContent = side === 'survivor' ? '🏃 求 生 者' : '👁 监 管 者';
 
+      // 今日角色按钮 — 两个玩家各一个
+      [pickBtnA, pickBtnB].forEach(b => {
+        b.dataset.name = name;
+        b.dataset.side = side;
+      });
+      pickBtnA.textContent = '🌟 小木木的今日角色';
+      pickBtnB.textContent = '🌟 小E的今日角色';
+      pickBtnA.style.background = '';
+      pickBtnB.style.background = '';
+
       modal.style.display = 'flex';
     });
   });
+
+  // 选为今日角色按钮
+  async function handlePickDaily(btn) {
+    const name = btn.dataset.name;
+    const side = btn.dataset.side;
+    const playerKey = btn.dataset.player;
+    if (!name) return;
+
+    try {
+      const res = await fetch('/api/daily-character?player=' + playerKey, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: name, side: side }),
+      });
+      if (res.ok) {
+        btn.textContent = playerKey === 'A' ? '✓ 小木木已就位' : '✓ 小E已就位';
+        btn.style.background = 'linear-gradient(135deg, #2ea043, #238636)';
+        updateDailyCharacterUI(playerKey, name, side);
+      }
+    } catch (e) {
+      console.error('Failed to set daily character:', e);
+    }
+  }
+
+  pickBtnA.addEventListener('click', () => handlePickDaily(pickBtnA));
+  pickBtnB.addEventListener('click', () => handlePickDaily(pickBtnB));
 
   closeBtn.addEventListener('click', close);
   modal.addEventListener('click', (e) => {
@@ -720,6 +760,34 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
+
+// ════════════════ 共享函数 ════════════════
+
+/** 更新面板的今日角色 UI */
+function updateDailyCharacterUI(playerKey, name, side) {
+  const section = document.querySelector(`.js-daily-section[data-player="${playerKey}"]`);
+  if (!section) return;
+
+  const imgPath = CHARACTER_IMAGES[name] || '';
+  const iconEmoji = side === 'survivor'
+    ? (SURVIVOR_ICONS[name] || '')
+    : (HUNTER_ICONS[name] || '');
+
+  const quote = CHARACTER_QUOTES[name] || '……';
+  section.innerHTML = `
+    <div class="daily-card daily-active" data-side="${side}">
+      <span class="daily-label">📅 今日角色</span>
+      <span class="daily-char-icon">
+        <img class="daily-char-img" src="/static/${imgPath}" alt="${name}" loading="lazy"
+             onerror="this.style.display='none';this.nextElementSibling.style.display='block';">
+        <span class="daily-icon-fallback" style="display:none;">${iconEmoji}</span>
+      </span>
+      <span class="daily-char-name">${name}</span>
+      <span class="daily-char-side">${side === 'survivor' ? '🏃 求生者' : '👁 监管者'}</span>
+      <span class="daily-char-quote">「${quote}」</span>
+    </div>
+  `;
+}
 
 // ════════════════ 启动 ════════════════
 

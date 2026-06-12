@@ -892,6 +892,100 @@ body {
   cursor: pointer;
 }
 
+/* === 今日角色卡片 === */
+.daily-character-section {
+  margin-bottom: 16px;
+}
+
+.daily-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  transition: all 0.3s ease;
+}
+
+.daily-active {
+  border-color: var(--border-gold);
+  background: linear-gradient(135deg, rgba(201, 169, 110, 0.08), rgba(201, 169, 110, 0.02));
+}
+
+.daily-active[data-side="survivor"] {
+  border-color: rgba(63, 185, 80, 0.4);
+}
+
+.daily-active[data-side="hunter"] {
+  border-color: rgba(248, 81, 73, 0.4);
+}
+
+.daily-empty {
+  opacity: 0.6;
+}
+
+.daily-label {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.daily-hint {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.daily-char-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+}
+
+.daily-char-img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--border-gold);
+}
+
+.daily-icon-fallback {
+  font-size: 1.8rem;
+  line-height: 40px;
+}
+
+.daily-char-name {
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--accent-gold-light);
+}
+
+.daily-char-side {
+  margin-left: auto;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  padding: 2px 10px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+}
+
+.daily-char-quote {
+  display: block;
+  width: 100%;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--border-color);
+  font-size: 0.78rem;
+  color: var(--accent-gold);
+  font-style: italic;
+  line-height: 1.5;
+}
+
 /* === 角色立绘弹窗 === */
 .portrait-box {
   background: var(--bg-card);
@@ -1059,6 +1153,56 @@ body {
   margin: 0 auto;
   position: relative;
   z-index: 1;
+}
+
+/* 角色台词 */
+.portrait-quote {
+  font-style: italic;
+  color: var(--accent-gold);
+  font-size: 0.85rem;
+  line-height: 1.6;
+  margin: 12px auto 16px;
+  max-width: 300px;
+  padding: 10px 16px;
+  background: rgba(201, 169, 110, 0.05);
+  border-left: 3px solid var(--border-gold);
+  border-radius: 0 6px 6px 0;
+  position: relative;
+  z-index: 1;
+  text-align: left;
+}
+
+/* 今日角色选择按钮组 */
+.daily-pick-buttons {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+  position: relative;
+  z-index: 1;
+}
+
+.btn-pick-daily {
+  padding: 8px 16px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  border: 1px solid var(--border-gold);
+  border-radius: 20px;
+  background: transparent;
+  color: var(--accent-gold);
+  cursor: pointer;
+  transition: all 0.25s;
+  font-family: var(--font-body);
+}
+
+.btn-pick-daily:hover {
+  background: rgba(201, 169, 110, 0.15);
+  box-shadow: 0 0 16px rgba(201, 169, 110, 0.2);
+  transform: translateY(-1px);
+}
+
+.btn-pick-daily:active {
+  transform: scale(0.96);
 }
 
 /* 底部装饰 */

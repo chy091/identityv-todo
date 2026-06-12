@@ -14,8 +14,18 @@ if sys.stdout.encoding != "utf-8":
 DATA_FILE = "todos.json"
 
 # ── 第五人格主题角色映射 ──
-SURVIVORS = ["医生", "园丁", "律师", "慈善家", "机械师", "前锋", "佣兵", "调香师"]
-HUNTERS = ["杰克", "小丑", "蜘蛛", "红蝶", "黄衣之主", "宿伞之魂", "摄影师", "梦之女巫"]
+SURVIVORS = [
+    "医生", "园丁", "律师", "慈善家", "机械师", "前锋", "佣兵", "调香师",
+    "空军", "祭司", "盲女", "先知", "入殓师", "咒术师", "勘探员", "野人",
+    "杂技演员", "大副", "守墓人", "囚徒", "昆虫学者", "击球手", "心理学者", "病患",
+    "哭泣小丑", "教授", "古董商", "作曲家", "记者", "拉拉队员", "消防员",
+]
+HUNTERS = [
+    "杰克", "小丑", "蜘蛛", "红蝶", "黄衣之主", "宿伞之魂", "摄影师", "梦之女巫",
+    "厂长", "鹿头", "疯眼", "爱哭鬼", "红夫人", "小提琴家", "雕刻家", "邦邦",
+    "使徒", "渔女", "博士", "蜡像师", "破轮", "噩梦", "记录员", "隐士",
+    "守夜人", "歌剧演员", "时空之影", "艾维",
+]
 
 TITLE_ART = r"""
   +=============================================================+
@@ -164,11 +174,56 @@ class TodoManager:
         progress = (done / total * 100) if total > 0 else 0
         return total, done, progress
 
+    def get_daily_character(self) -> dict | None:
+        """返回今日选择的角色信息，如果日期不匹配则返回 None"""
+        today = datetime.now().strftime("%Y-%m-%d")
+        meta = self._load_meta()
+        if meta.get("daily_date") == today:
+            return {"name": meta["daily_character"], "side": meta.get("daily_side", "")}
+        return None
+
+    def set_daily_character(self, name: str, side: str) -> bool:
+        """设置今日角色"""
+        today = datetime.now().strftime("%Y-%m-%d")
+        self._save_meta({"daily_character": name, "daily_side": side, "daily_date": today})
+        return True
+
+    def _load_meta(self) -> dict:
+        """读取文件中的元数据"""
+        if not os.path.exists(self._data_file):
+            return {}
+        try:
+            with open(self._data_file, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            return data.get("meta", {})
+        except (json.JSONDecodeError, OSError):
+            return {}
+
+    def _save_meta(self, meta: dict):
+        """保存元数据（不影响 tasks 和 counter）"""
+        existing = {}
+        if os.path.exists(self._data_file):
+            try:
+                with open(self._data_file, "r", encoding="utf-8") as f:
+                    existing = json.load(f)
+            except (json.JSONDecodeError, OSError):
+                pass
+        existing["meta"] = meta
+        try:
+            with open(self._data_file, "w", encoding="utf-8") as f:
+                json.dump(existing, f, ensure_ascii=False, indent=2)
+        except OSError:
+            pass
+
     def save(self):
         data = {
             "counter": self.counter,
             "tasks": [t.to_dict() for t in self.tasks],
         }
+        # 保留已有 meta
+        existing_meta = self._load_meta()
+        if existing_meta:
+            data["meta"] = existing_meta
         try:
             with open(self._data_file, "w", encoding="utf-8") as f:
                 json.dump(data, f, ensure_ascii=False, indent=2)
