@@ -46,21 +46,31 @@ class TaskPanel {
     this.playerName = playerName;     // 显示名
     this.apiParam = '?player=' + playerKey;
 
-    // ── 缓存 DOM 引用（全部作用域内查询）──
-    this._cacheDom();
+    try {
+      // ── 缓存 DOM 引用（全部作用域内查询）──
+      this._cacheDom();
 
-    // ── 事件绑定 ──
-    this._bindEvents();
+      // ── 事件绑定 ──
+      this._bindEvents();
 
-    // ── 注册到全局实例列表 ──
-    TaskPanel._instances.push(this);
+      // ── 注册到全局实例列表 ──
+      TaskPanel._instances.push(this);
 
-    // ── 初始统计刷新 ──
-    this.refreshStats();
+      // ── 初始统计刷新 ──
+      this.refreshStats();
+
+      console.log('[TaskPanel] ' + playerName + ' 初始化成功');
+    } catch (err) {
+      console.error('[TaskPanel] ' + playerName + ' 初始化失败:', err);
+    }
   }
 
   // 静态实例列表（用于全局键盘事件等）
-  static _instances = [];
+  // 兼容旧浏览器：不用 static 类字段语法
+  static get _instances() {
+    if (!this.__instances) this.__instances = [];
+    return this.__instances;
+  }
 
   // ════════════ DOM 缓存 ════════════
   _cacheDom() {
@@ -108,32 +118,48 @@ class TaskPanel {
   // ════════════ 事件绑定 ════════════
   _bindEvents() {
     // 添加任务
-    this.addForm.addEventListener('submit', (e) => this._handleAddTask(e));
+    if (this.addForm) {
+      this.addForm.addEventListener('submit', (e) => this._handleAddTask(e));
+    }
 
     // 任务列表事件委托（toggle / edit / delete / 拖拽）
-    this.taskList.addEventListener('click', (e) => this._handleTaskListClick(e));
+    if (this.taskList) {
+      this.taskList.addEventListener('click', (e) => this._handleTaskListClick(e));
 
-    // ── 拖拽排序事件（绑定在 taskList 容器上）──
-    this.taskList.addEventListener('dragstart', (e) => this._handleDragStart(e));
-    this.taskList.addEventListener('dragover', (e) => this._handleDragOver(e));
-    this.taskList.addEventListener('dragenter', (e) => this._handleDragEnter(e));
-    this.taskList.addEventListener('dragleave', (e) => this._handleDragLeave(e));
-    this.taskList.addEventListener('drop', (e) => this._handleDrop(e));
-    this.taskList.addEventListener('dragend', (e) => this._handleDragEnd(e));
+      // ── 拖拽排序事件（绑定在 taskList 容器上）──
+      this.taskList.addEventListener('dragstart', (e) => this._handleDragStart(e));
+      this.taskList.addEventListener('dragover', (e) => this._handleDragOver(e));
+      this.taskList.addEventListener('dragenter', (e) => this._handleDragEnter(e));
+      this.taskList.addEventListener('dragleave', (e) => this._handleDragLeave(e));
+      this.taskList.addEventListener('drop', (e) => this._handleDrop(e));
+      this.taskList.addEventListener('dragend', (e) => this._handleDragEnd(e));
+    }
 
     // 编辑弹窗
-    this.saveEditBtn.addEventListener('click', () => this._handleSaveEdit());
-    this.cancelEditBtn.addEventListener('click', () => this._closeEditModal());
-    this.editModal.addEventListener('click', (e) => {
-      if (e.target === this.editModal) this._closeEditModal();
-    });
+    if (this.saveEditBtn) {
+      this.saveEditBtn.addEventListener('click', () => this._handleSaveEdit());
+    }
+    if (this.cancelEditBtn) {
+      this.cancelEditBtn.addEventListener('click', () => this._closeEditModal());
+    }
+    if (this.editModal) {
+      this.editModal.addEventListener('click', (e) => {
+        if (e.target === this.editModal) this._closeEditModal();
+      });
+    }
 
     // 删除弹窗
-    this.confirmDeleteBtn.addEventListener('click', () => this._handleConfirmDelete());
-    this.cancelDeleteBtn.addEventListener('click', () => this._closeDeleteModal());
-    this.deleteModal.addEventListener('click', (e) => {
-      if (e.target === this.deleteModal) this._closeDeleteModal();
-    });
+    if (this.confirmDeleteBtn) {
+      this.confirmDeleteBtn.addEventListener('click', () => this._handleConfirmDelete());
+    }
+    if (this.cancelDeleteBtn) {
+      this.cancelDeleteBtn.addEventListener('click', () => this._closeDeleteModal());
+    }
+    if (this.deleteModal) {
+      this.deleteModal.addEventListener('click', (e) => {
+        if (e.target === this.deleteModal) this._closeDeleteModal();
+      });
+    }
   }
 
   // ════════════ Toast ════════════
