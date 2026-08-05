@@ -11,8 +11,8 @@ import todo  # 复用现有数据模型
 
 app = Flask(__name__)
 
-# 生产环境配置
-is_production = os.environ.get("RENDER", False)
+# 生产环境配置（Render / PythonAnywhere 均视为生产环境）
+is_production = os.environ.get("RENDER") or os.environ.get("PYTHONANYWHERE_DOMAIN")
 app.config["DEBUG"] = not is_production  # debug=False in production
 
 # 数据文件路径（支持 Render 持久磁盘）
